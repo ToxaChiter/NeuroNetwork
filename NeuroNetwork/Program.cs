@@ -8,7 +8,7 @@ internal class Program
     {
         var sigmoid = (double input) =>
         {
-            return 1.0 / (1.0 + Math.Pow(Math.E, -input));
+            return 1.0 / (1.0 + Math.Exp(-input));
         };
 
         var randomInputWeights = RandomMatrix(28 * 28, 4, 5);
