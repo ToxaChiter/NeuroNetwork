@@ -1,9 +1,13 @@
-﻿namespace ChatCPT;
+﻿using static System.Runtime.InteropServices.JavaScript.JSType;
+using System;
+
+namespace ChatCPT;
 
 public enum Mode
 {
     Regular,
-    Advanced
+    AdvancedOutput,
+    Advanced,
 }
 
 //public class NeuralNetwork
@@ -143,12 +147,13 @@ internal class MyNeuroNetwork
     private List<double[]> outputs;
     private List<double[]> weightedSums;
     private List<double[]> errors;
-    private List<double[]> deltas;
+    private List<double[,]> weightDeltas;
+    private List<double[]> biaseDeltas;
 
 
-    public MyNeuroNetwork(int layers, int inputs, int[] hiddens, int output)
+    public MyNeuroNetwork(int inputs, int[] hiddens, int output)
     {
-        Layers = layers;
+        Layers = 1 + hiddens.Length + 1;
         Inputs = inputs;
         Hiddens = hiddens;
         Outputs = output;
@@ -167,11 +172,16 @@ internal class MyNeuroNetwork
         weights = new List<double[,]>(Layers - 1);
         biases = new List<double[]>(Layers - 1);
 
+        biaseDeltas = new List<double[]>(Layers - 1);
+        weightDeltas = new List<double[,]>(Layers - 1);
 
         for (int L = 0; L < Layers - 1; L++)
         {
             var weights = new double[layerSizes[L], layerSizes[L + 1]];
             var biases = new double[layerSizes[L + 1]];
+
+            biaseDeltas.Add(new double[layerSizes[L + 1]]);
+            weightDeltas.Add(new double[layerSizes[L], layerSizes[L + 1]]);
 
             for (int j = 0; j < weights.GetLength(1); j++)
             {
@@ -192,7 +202,6 @@ internal class MyNeuroNetwork
         outputs = new List<double[]>(layerSizes.Length);
         weightedSums = new List<double[]>(layerSizes.Length);
         errors = new List<double[]>(layerSizes.Length);
-        deltas = new List<double[]>(layerSizes.Length);
 
         for (int i = 0; i < layerSizes.Length; i++)
         {
@@ -201,7 +210,6 @@ internal class MyNeuroNetwork
             outputs.Add(new double[n]);
             weightedSums.Add(new double[n]);
             errors.Add(new double[n]);
-            deltas.Add(new double[n]);
         }
     }
 
@@ -218,6 +226,13 @@ internal class MyNeuroNetwork
         for (int i = 0; i < neuroNetwork.weights.Count; i++)
         {
             weights.Add(neuroNetwork.weights[i].Clone() as double[,]);
+            foreach (var item in weights[i])
+            {
+                if (item is double.NaN or double.NegativeInfinity or double.PositiveInfinity or >100.0 or <-100.0)
+                {
+                    int ex = 0;
+                }
+            }
         }
 
         biases = new List<double[]>(neuroNetwork.biases.Count);
@@ -226,10 +241,18 @@ internal class MyNeuroNetwork
             biases.Add(neuroNetwork.biases[i].Clone() as double[]);
         }
 
+        biaseDeltas = new List<double[]>(Layers - 1);
+        weightDeltas = new List<double[,]>(Layers - 1);
+
+        for (int L = 0; L < Layers - 1; L++)
+        {
+            biaseDeltas.Add(new double[layerSizes[L + 1]]);
+            weightDeltas.Add(new double[layerSizes[L], layerSizes[L + 1]]);
+        }
+
         outputs = new List<double[]>(layerSizes.Length);
         weightedSums = new List<double[]>(layerSizes.Length);
         errors = new List<double[]>(layerSizes.Length);
-        deltas = new List<double[]>(layerSizes.Length);
 
         for (int i = 0; i < layerSizes.Length; i++)
         {
@@ -238,7 +261,6 @@ internal class MyNeuroNetwork
             outputs.Add(new double[n]);
             weightedSums.Add(new double[n]);
             errors.Add(new double[n]);
-            deltas.Add(new double[n]);
         }
     }
 
@@ -253,44 +275,174 @@ internal class MyNeuroNetwork
         return sigm * (1 - sigm);
     }
 
-    public void Train(List<(double[] Labels, double[] Image)> testCases, Mode mode, double learningRate)
+    public double Train(List<(double[] Labels, double[] Image)> trainCases, Mode mode, double learningRate, int batch = 1)
     {
+        // random peek from traincases
+        var randTrainCases = RandomList(trainCases);
+
         var totalError = 0.0;
+
+
         switch (mode)
         {
             case Mode.Regular:
-                //Parallel.For(0, testCases.Count, i =>
+                for (int i = 0; i < randTrainCases.Count; i += batch)
+                {
+                    ResetDeltas();
+
+                    //if (i + batch >= randTrainCases.Count)
+                    //{
+                    //    while (i < randTrainCases.Count)
+                    //    {
+                    //        RegularTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
+                    //        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                    //        i++;
+                    //    }
+                    //    UpdateWeightsBiases(batch);
+                    //    break;
+                    //}
+
+                    //Parallel.For(0, batch, j =>
+                    //{
+                    //    RegularTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
+                    //    totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                    //});
+
+
+                    for (int j = 0; j < batch && i < randTrainCases.Count; j++, i++)
+                    {
+                        RegularTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
+                        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                    }
+                    UpdateWeightsBiases(batch);
+                }
+
+
+                return totalError;
+
+            case Mode.AdvancedOutput:
+                //for (int i = 0; i < randTrainCases.Count; i += batch)
                 //{
-                for (int i = 0; i < testCases.Count; i++)
-                    totalError += RegularTrain(testCases[i].Image, testCases[i].Labels, learningRate);
-                //});
-                Console.WriteLine($"Total error: {totalError}");
-                break;
+                //    ResetDeltas();
+
+                //    if (i + batch >= randTrainCases.Count)
+                //    {
+                //        while (i < randTrainCases.Count)
+                //        {
+                //            AdvancedOutputTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
+                //            totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                //            i++;
+                //        }
+                //        UpdateWeightsBiases(batch);
+                //        break;
+                //    }
+
+                //    Parallel.For(0, batch, j =>
+                //    {
+                //        AdvancedOutputTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
+                //        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                //    });
+
+                //    UpdateWeightsBiases(batch);
+                //}
+
+
+
+                for (int i = 0; i < randTrainCases.Count;)
+                {
+                    ResetDeltas();
+                    for (int j = 0; j < batch && i < randTrainCases.Count; j++, i++)
+                    {
+                        AdvancedOutputTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
+                        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                    }
+                    UpdateWeightsBiases(batch);
+                }
+
+
+                return totalError;
 
             case Mode.Advanced:
-                //Parallel.For(0, testCases.Count, i =>
+
+
+                //for (int i = 0; i < randTrainCases.Count; i += batch)
                 //{
-                for (int i = 0; i < testCases.Count; i++)
-                    totalError += AdvancedTrain(testCases[i].Image, testCases[i].Labels);
-                Console.WriteLine($"Total error: {totalError}");
-                //});
-                break;
+                //    ResetDeltas();
+
+                //    if (i + batch >= randTrainCases.Count)
+                //    {
+                //        while (i < randTrainCases.Count)
+                //        {
+                //            AdvancedTrain(randTrainCases[i].Image, randTrainCases[i].Labels);
+                //            totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                //            i++;
+                //        }
+                //        UpdateWeightsBiases(batch);
+                //        break;
+                //    }
+
+                //    Parallel.For(0, batch, j =>
+                //    {
+                //        AdvancedTrain(randTrainCases[i].Image, randTrainCases[i].Labels);
+                //        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                //    });
+
+                //    UpdateWeightsBiases(batch);
+                //}
+
+
+                for (int i = 0; i < randTrainCases.Count;)
+                {
+                    ResetDeltas();
+                    for (int j = 0; j < batch && i < randTrainCases.Count; j++, i++)
+                    {
+                        AdvancedTrain(randTrainCases[i].Image, randTrainCases[i].Labels);
+                        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
+                    }
+                    UpdateWeightsBiases(batch);
+                }
+
+
+                return totalError;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(mode));
         }
     }
 
-    private double AdvancedTrain(double[] input, double[] output)
+    private void ResetDeltas()
+    {
+        foreach (var delta in weightDeltas)
+        {
+            for (int i = 0; i < delta.GetLength(0); i++)
+            {
+                for (int j = 0; j < delta.GetLength(1); j++)
+                {
+                    delta[i, j] = 0.0;
+                }
+            }
+        }
+
+        foreach (var delta in biaseDeltas)
+        {
+            for (int i = 0; i < delta.Length; i++)
+            {
+                delta[i] = 0.0;
+            }
+        }
+    }
+
+    private void AdvancedTrain(double[] input, double[] output)
     {
         FeedForward(input);
         BackpropagateAdvanced(output);
-        UpdateWeightsBiases();
-
-        return output.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
     }
 
-
+    private void AdvancedOutputTrain(double[] input, double[] output, double learningRate)
+    {
+        FeedForward(input);
+        BackpropagateAdvancedOutput(output, learningRate);
+    }
 
     private void FeedForward(double[] inputs)
     {
@@ -316,10 +468,16 @@ internal class MyNeuroNetwork
                     // Compute the weighted sum of the previous layer's outputs
                     // to get the inputs to the current neuron
                     sum += weights[i, j] * prevActivations[i];
-                    if (double.IsNaN(sum) || double.IsInfinity(sum)) throw new Exception();
+                    //if (double.IsNaN(sum) || double.IsInfinity(sum))
+                    //{
+                    //    int ex = 0;
+                    //}
                 }
                 weightedSums[j] = sum - biases[j];
-                if (double.IsNaN(weightedSums[j]) || double.IsInfinity(weightedSums[j])) throw new Exception();
+                //if (double.IsNaN(weightedSums[j]) || double.IsInfinity(weightedSums[j]))
+                //{
+                //    int ex = 0;
+                //}
                 // Apply the activation function (sigmoid) to the neuron's inputs
                 newActivations[j] = Sigmoid(weightedSums[j]);
             }
@@ -345,21 +503,36 @@ internal class MyNeuroNetwork
 
         for (int j = 0; j < layerSizes[^1]; j++)
         {
-            double ln = Math.Log((outputs[^1][j] - errors[^1][j]) / (1 - outputs[^1][j] + errors[^1][j]));
-            if (double.IsNaN(ln) || double.IsInfinity(ln)) throw new Exception();
-            deltas[^1][j] = (weightedSums[^1][j] - ln) / bottomLast;
+            double D = outputs[^1][j] - errors[^1][j];
+
+            if (D <= 0.0) D = 0.001;
+            if (D >= 1.0) D = 0.999;
+            double ln = Math.Log(D / (1 - D));
+            //if (double.IsNaN(ln) || double.IsInfinity(ln))
+            //{
+            //    int ex = 0;
+            //}
+            var delta = (weightedSums[^1][j] - ln) / bottomLast;
+            biaseDeltas[^1][j] += delta;
+            for (int i = 0; i < layerSizes[^2]; i++)
+            {
+                weightDeltas[^1][i, j] += delta * outputs[^2][i];
+            }
         }
 
 
         for (int L = Layers - 2; L > 0; L--)
         {
-            var activations = this.outputs[L + 1];
+            var nextActivations = this.outputs[L + 1];
+            var activations = this.outputs[L];
             var prevActivations = this.outputs[L - 1];
-            var prevWeightedSums = this.weightedSums[L + 1];
+            var nextWeightedSums = this.weightedSums[L + 1];
             var weightedSums = this.weightedSums[L];
             var weights = this.weights[L];
-            var deltas = this.deltas[L];
+            var biaseDeltas = this.biaseDeltas[L - 1];
+            var weightDeltas = this.weightDeltas[L - 1];
             var errors = this.errors[L];
+            var nextErrors = this.errors[L + 1];
 
             double bottom = 1.0;
             for (int k = 0; k < layerSizes[L - 1]; k++)
@@ -373,91 +546,200 @@ internal class MyNeuroNetwork
                 double sum = 0.0;
                 for (int i = 0; i < layerSizes[L + 1]; i++)
                 {
-                    sum += activations[i] * weights[j, i] * SigmoidDerv(prevWeightedSums[i]);
+                    sum += nextErrors[i] * weights[j, i] * SigmoidDerv(nextWeightedSums[i]);
                 }
                 errors[j] = sum;
 
-                double ln = Math.Log((activations[j] - errors[j]) / (1 - activations[j] + errors[j]));
-                if (double.IsNaN(ln) || double.IsInfinity(ln)) throw new Exception();
-                deltas[j] = (weightedSums[j] - ln) / bottom;
+                // many questions
+                double D = activations[j] - errors[j];
+
+                if (D <= 0.0) D = 0.001;
+                if (D >= 1.0) D = 0.999;
+
+                double ln = Math.Log(D / (1 - D));
+                //if (double.IsNaN(ln))
+                //{
+                //    int ex = 0;
+                //}
+
+                var delta = (weightedSums[j] - ln) / bottom;
+                biaseDeltas[j] += delta;
+                for (int i = 0; i < layerSizes[L - 1]; i++)
+                {
+                    weightDeltas[i, j] += delta * prevActivations[i];
+                }
             }
         }
     }
 
-    private void UpdateWeightsBiases()
+
+    private void BackpropagateAdvancedOutput(double[] output, double learningRate)
+    {
+        // Compute the error for the output layer neurons
+        for (int i = 0; i < layerSizes[^1]; i++)
+        {
+            errors[^1][i] = outputs[^1][i] - output[i];
+        }
+
+
+        double bottomLast = 1.0;
+        for (int k = 0; k < layerSizes[^2]; k++)
+        {
+            bottomLast += Math.Pow(outputs[^2][k], 2);
+        }
+
+        for (int j = 0; j < layerSizes[^1]; j++)
+        {
+            double D = outputs[^1][j] - errors[^1][j];
+
+            if (D <= 0.0) D = 0.001;
+            if (D >= 1.0) D = 0.999;
+            double ln = Math.Log(D / (1 - D));
+            //if (double.IsNaN(ln) || double.IsInfinity(ln))
+            //{
+            //    int ex = 0;
+            //}
+
+            var delta = (weightedSums[^1][j] - ln) / bottomLast;
+
+            //if (delta is >1.0E+20 or <-1.0E+20)
+            //{
+            //    int ex = 0;
+            //}
+
+
+            biaseDeltas[^1][j] += delta;
+            for (int i = 0; i < layerSizes[^2]; i++)
+            {
+                weightDeltas[^1][i, j] += delta * outputs[^2][i];
+            }
+        }
+
+
+
+        // regular train
+        for (int L = layerSizes.Length - 2; L > 0; L--)
+        {
+            var prevWeights = this.weights[L];
+            var prevErrors = this.errors[L + 1];
+            var errors = this.errors[L];
+            var outputs = this.outputs[L];
+            var prevOutputs = this.outputs[L - 1];
+            var weightDeltas = this.weightDeltas[L - 1];
+            var biaseDeltas = this.biaseDeltas[L - 1];
+
+
+            for (int j = 0; j < layerSizes[L]; j++)
+            {
+                var weightedSum = 0.0;
+                for (int k = 0; k < layerSizes[L + 1]; k++)
+                {
+                    weightedSum += prevErrors[k] * prevWeights[j, k];
+                }
+                errors[j] = weightedSum * outputs[j] * (1 - outputs[j]);
+
+                biaseDeltas[j] += learningRate * errors[j];
+                for (int k = 0; k < layerSizes[L - 1]; k++)
+                {
+                    weightDeltas[k, j] += learningRate * errors[j] * prevOutputs[k];
+                    //if (double.IsNaN(weightDeltas[k, j]) || double.IsInfinity(weightDeltas[k, j]))
+                    //{
+                    //    int ex = 0;
+                    //}
+                }
+
+                //biases[j] += learningRate * errors[j];
+                //for (int k = 0; k < layerSizes[L - 1]; k++)
+                //{
+                //    weights[k, j] -= learningRate * errors[j] * prevOutputs[k];
+                //}
+            }
+        }
+    }
+
+
+    private void UpdateWeightsBiases(int batch)
     {
         for (int L = 0; L < layerSizes.Length - 1; L++)
         {
-            var activations = this.outputs[L];
             var weights = this.weights[L];
-            var deltas = this.deltas[L];
+            var weightDeltas = this.weightDeltas[L];
+            var biaseDeltas = this.biaseDeltas[L];
             var biases = this.biases[L];
 
             for (int j = 0; j < weights.GetLength(1); j++)
             {
                 for (int i = 0; i < weights.GetLength(0); i++)
                 {
-                    weights[i, j] -= deltas[j] * activations[i];
+                    weights[i, j] -= weightDeltas[i, j] / batch;
+                    //if (double.IsNaN(weightDeltas[i, j]) || double.IsInfinity(weightDeltas[i, j]))
+                    //{
+                    //    int ex = 0;
+                    //}
                 }
 
-                biases[j] += deltas[j];
+                biases[j] += biaseDeltas[j] / batch;
+                //if (double.IsNaN(biaseDeltas[j]) || double.IsInfinity(biaseDeltas[j]))
+                //{
+                //    int ex = 0;
+                //}
             }
         }
     }
 
 
 
-    private double RegularTrain(double[] inputs, double[] targets, double learningRate)
+    private void RegularTrain(double[] inputs, double[] targets, double learningRate)
     {
-        var input = inputs;
-        var target = targets;
-
         // Forward pass
-
-        FeedForward(input);
+        FeedForward(inputs);
 
         // Backward pass
+        BackpropagateRegular(targets, learningRate);
+    }
+
+    private void BackpropagateRegular(double[] output, double learningRate)
+    {
         for (int j = 0; j < Outputs; j++)
         {
-            errors[^1][j] = (outputs[^1][j] - target[j]) * outputs[^1][j] * (1 - outputs[^1][j]);
-            biases[^1][j] += learningRate * errors[^1][j];
+            errors[^1][j] = (outputs[^1][j] - output[j]) * outputs[^1][j] * (1 - outputs[^1][j]);
+
+            biaseDeltas[^1][j] += learningRate * errors[^1][j];
 
             for (int k = 0; k < Hiddens[^1]; k++)
             {
-                weights[^1][k, j] -= learningRate * errors[^1][j] * outputs[^2][k];
+                weightDeltas[^1][k, j] += learningRate * errors[^1][j] * outputs[^2][k];
             }
         }
 
-        for (int l = layerSizes.Length - 2; l > 0; l--)
+        for (int L = layerSizes.Length - 2; L > 0; L--)
         {
-            var prevWeights = this.weights[l];
-            var weights = this.weights[l - 1];
-            var prevErrors = this.errors[l + 1];
-            var errors = this.errors[l];
-            var outputs = this.outputs[l];
-            var prevOutputs = this.outputs[l - 1];
-            var biases = this.biases[l - 1];
+            var prevWeights = this.weights[L];
+            var prevErrors = this.errors[L + 1];
+            var errors = this.errors[L];
+            var outputs = this.outputs[L];
+            var prevOutputs = this.outputs[L - 1];
+            var weightDeltas = this.weightDeltas[L - 1];
+            var biaseDeltas = this.biaseDeltas[L - 1];
 
 
-            for (int j = 0; j < layerSizes[l]; j++)
+            for (int j = 0; j < layerSizes[L]; j++)
             {
                 var weightedSum = 0.0;
-                for (int k = 0; k < layerSizes[l + 1]; k++)
+                for (int k = 0; k < layerSizes[L + 1]; k++)
                 {
                     weightedSum += prevErrors[k] * prevWeights[j, k];
                 }
                 errors[j] = weightedSum * outputs[j] * (1 - outputs[j]);
-                biases[j] += learningRate * errors[j];
-                for (int k = 0; k < layerSizes[l - 1]; k++)
+
+                biaseDeltas[j] += learningRate * errors[j];
+                for (int k = 0; k < layerSizes[L - 1]; k++)
                 {
-                    weights[k, j] -= learningRate * errors[j] * prevOutputs[k];
+                    weightDeltas[k, j] += learningRate * errors[j] * prevOutputs[k];
                 }
             }
         }
-
-        return target.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
     }
-
 
 
 
@@ -492,7 +774,7 @@ internal class MyNeuroNetwork
 
 
 
-    public void Evaluate(List<(int Label, double[] Image)> checkCases)
+    public double Evaluate(List<(int Label, double[] Image)> checkCases)
     {
         int rightCounter = 0;
         Parallel.ForEach(checkCases, (testCase) =>
@@ -503,12 +785,24 @@ internal class MyNeuroNetwork
             }
         });
 
-        Console.WriteLine($"Right guesses: {rightCounter * 100.0 / checkCases.Count}%");
+        return rightCounter * 100.0 / checkCases.Count;
     }
 
 
 
-
+    public static List<T> RandomList<T>(List<T> list)
+    {
+        var random = new Random();
+        var data = new T[list.Count];
+        for (int i = 0; i < list.Count; i++)
+        {
+            int j = random.Next(i + 1);
+            if (j != i)
+                data[i] = data[j];
+            data[j] = list[i];
+        }
+        return new List<T>(data);
+    }
 
 
 

@@ -16,6 +16,7 @@
 
 using ChatCPT;
 using MNIST.IO;
+using System.Reflection.Emit;
 
 //public class NeuralNetwork
 //{
@@ -211,7 +212,7 @@ using MNIST.IO;
 //        return 1 / (1 + Math.Exp(-x));
 //    }
 
-//    public List<(int Label, double[] Image)> testCases;
+//    public List<(int Label, double[] Image)> trainCases;
 //    public List<(int Label, double[] Image)> checkCases;
 
 //    public void Evaluate()
@@ -224,7 +225,7 @@ using MNIST.IO;
 //                rightCounter++;
 //            }
 //        });
-//        //foreach (var (Label, Image) in testCases)
+//        //foreach (var (Label, Image) in trainCases)
 //        //{
 //        //    if (Label == Predict(Image))
 //        //    {
@@ -250,12 +251,12 @@ class Program
             "../../../data/train-images-idx3-ubyte.gz");
 
         var checkData = FileReaderMNIST.LoadImagesAndLables(
-            "../../../data/train-labels-idx1-ubyte.gz",
-            "../../../data/train-images-idx3-ubyte.gz");
+            "../../../data/t10k-labels-idx1-ubyte.gz", 
+            "../../../data/t10k-images-idx3-ubyte.gz");
 
         Console.WriteLine("Loaded");
         
-        List<(double[] Labels, double[] Image)> testCases = new(60_000);
+        List<(double[] Labels, double[] Image)> trainCases = new(60_000);
         List<(int Label, double[] Image)> checkCases = new(10_000);
 
 
@@ -277,7 +278,7 @@ class Program
             label.Initialize();
             label[testCase.Label] = 1.0;
 
-            testCases.Add((label, temp));
+            trainCases.Add((label, temp));
         }
 
         foreach (var testCase in checkData)
@@ -288,7 +289,7 @@ class Program
 
         //for (int i = 0; i < 60_000; i++)
         //{
-        //    testCases.Add((new double[10], new double[784]));
+        //    trainCases.Add((new double[10], new double[784]));
         //}
 
         //for (int i = 0; i < 10_000; i++)
@@ -298,18 +299,32 @@ class Program
 
         Console.WriteLine("Performed");
         
-        MyNeuroNetwork regularNeuroNetwork = new MyNeuroNetwork(3, 28 * 28, new int[] { 16 }, 10);
+        MyNeuroNetwork regularNeuroNetwork = new MyNeuroNetwork(28 * 28, new int[] { 80, 16 }, 10);
+        MyNeuroNetwork advancedOutputNeuroNetwork = new MyNeuroNetwork(regularNeuroNetwork);
         MyNeuroNetwork advancedNeuroNetwork = new MyNeuroNetwork(regularNeuroNetwork);
 
-        advancedNeuroNetwork.Evaluate(checkCases);
+        var learningRate = 0.1;
+        var batch = 24;
 
-        for (int epoch = 0; epoch < 51; epoch++)
+        double error = 0.0;
+        var eval = regularNeuroNetwork.Evaluate(checkCases);
+        Console.WriteLine($"Init precision: {eval}%");
+
+        for (int epoch = 1; epoch < 51; epoch++)
         {
-            regularNeuroNetwork.Train(testCases, Mode.Regular, 0.1);
-            advancedNeuroNetwork.Train(testCases, Mode.Advanced, 0.1);
-            Console.WriteLine($"Epoch {epoch} is completed");
-            regularNeuroNetwork.Evaluate(checkCases);
-            advancedNeuroNetwork.Evaluate(checkCases);
+            Console.WriteLine($"\n\nAfter epoch #{epoch}:\n");
+
+            error = regularNeuroNetwork.Train(trainCases, Mode.Regular, learningRate, batch);
+            eval = regularNeuroNetwork.Evaluate(checkCases);
+            Console.WriteLine($"Regular training:   error - {error},   precision - {eval}%");
+
+            error = advancedOutputNeuroNetwork.Train(trainCases, Mode.AdvancedOutput, learningRate, batch);
+            eval = advancedOutputNeuroNetwork.Evaluate(checkCases);
+            Console.WriteLine($"Advanced-regular training:   error - {error},   precision - {eval}%");
+
+            error = advancedNeuroNetwork.Train(trainCases, Mode.Advanced, learningRate, batch);
+            eval = advancedNeuroNetwork.Evaluate(checkCases);
+            Console.WriteLine($"Advanced training:   error - {error},   precision - {eval}%");
         }
 
     }
