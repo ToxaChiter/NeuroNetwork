@@ -16,6 +16,7 @@
 
 using ChatCPT;
 using MNIST.IO;
+using System.Diagnostics;
 using System.Reflection.Emit;
 
 //public class NeuralNetwork
@@ -303,28 +304,90 @@ class Program
         MyNeuroNetwork advancedOutputNeuroNetwork = new MyNeuroNetwork(regularNeuroNetwork);
         MyNeuroNetwork advancedNeuroNetwork = new MyNeuroNetwork(regularNeuroNetwork);
 
+        MyNeuroNetwork regularNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+        MyNeuroNetwork advancedOutputNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+        MyNeuroNetwork advancedNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+
         var learningRate = 0.1;
-        var batch = 24;
+        var batch = 5;
 
         double error = 0.0;
         var eval = regularNeuroNetwork.Evaluate(checkCases);
         Console.WriteLine($"Init precision: {eval}%");
 
+        Stopwatch errorStopwatch = new Stopwatch();
+        Stopwatch evalStopwatch = new Stopwatch();
+
         for (int epoch = 1; epoch < 51; epoch++)
         {
             Console.WriteLine($"\n\nAfter epoch #{epoch}:\n");
 
+
+            errorStopwatch.Start();
             error = regularNeuroNetwork.Train(trainCases, Mode.Regular, learningRate, batch);
+            errorStopwatch.Stop();
+            evalStopwatch.Start();
             eval = regularNeuroNetwork.Evaluate(checkCases);
-            Console.WriteLine($"Regular training:   error - {error},   precision - {eval}%");
+            evalStopwatch.Stop();
+            Console.WriteLine($"Regular training:                     error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({regularNeuroNetwork.Evaluate(trainCases):F3}%)");
+            errorStopwatch.Reset();
+            evalStopwatch.Reset();
 
-            error = advancedOutputNeuroNetwork.Train(trainCases, Mode.AdvancedOutput, learningRate, batch);
-            eval = advancedOutputNeuroNetwork.Evaluate(checkCases);
-            Console.WriteLine($"Advanced-regular training:   error - {error},   precision - {eval}%");
 
-            error = advancedNeuroNetwork.Train(trainCases, Mode.Advanced, learningRate, batch);
-            eval = advancedNeuroNetwork.Evaluate(checkCases);
-            Console.WriteLine($"Advanced training:   error - {error},   precision - {eval}%");
+            //errorStopwatch.Start();
+            //error = advancedOutputNeuroNetwork.Train(trainCases, Mode.AdvancedOutput, learningRate, batch);
+            //errorStopwatch.Stop();
+            //evalStopwatch.Start();
+            //eval = advancedOutputNeuroNetwork.Evaluate(checkCases);
+            //evalStopwatch.Stop();
+            //Console.WriteLine($"Advanced-regular training:            error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
+            //errorStopwatch.Reset();
+            //evalStopwatch.Reset();
+
+
+            //errorStopwatch.Start();
+            //error = advancedNeuroNetwork.Train(trainCases, Mode.Advanced, learningRate, batch);
+            //errorStopwatch.Stop();
+            //evalStopwatch.Start();
+            //eval = advancedNeuroNetwork.Evaluate(checkCases);
+            //evalStopwatch.Stop();
+            //Console.WriteLine($"Advanced training:                    error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
+            //errorStopwatch.Reset();
+            //evalStopwatch.Reset();
+
+            //Console.WriteLine();
+
+            //errorStopwatch.Start();
+            //error = regularNeuroNetworkParallel.TrainParallel(trainCases, Mode.Regular, learningRate, batch);
+            //errorStopwatch.Stop();
+            //evalStopwatch.Start();
+            //eval = regularNeuroNetworkParallel.Evaluate(checkCases);
+            //evalStopwatch.Stop();
+            //Console.WriteLine($"Regular parallel training:            error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
+            //errorStopwatch.Reset();
+            //evalStopwatch.Reset();
+
+
+            //errorStopwatch.Start();
+            //error = advancedOutputNeuroNetworkParallel.TrainParallel(trainCases, Mode.AdvancedOutput, learningRate, batch);
+            //errorStopwatch.Stop();
+            //evalStopwatch.Start();
+            //eval = advancedOutputNeuroNetworkParallel.Evaluate(checkCases);
+            //errorStopwatch.Stop();
+            //Console.WriteLine($"Advanced-regular parallel training:   error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({advancedOutputNeuroNetworkParallel.Evaluate(trainCases):F3}%)");
+            //errorStopwatch.Reset();
+            //evalStopwatch.Reset();
+
+
+            //errorStopwatch.Start();
+            //error = advancedNeuroNetworkParallel.TrainParallel(trainCases, Mode.Advanced, learningRate, batch);
+            //errorStopwatch.Stop();
+            //evalStopwatch.Start();
+            //eval = advancedNeuroNetworkParallel.Evaluate(checkCases);
+            //errorStopwatch.Stop();
+            //Console.WriteLine($"Advanced parallel training:           error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({advancedNeuroNetworkParallel.Evaluate(trainCases):F3}%)");
+            //errorStopwatch.Reset();
+            //evalStopwatch.Reset();
         }
 
     }
