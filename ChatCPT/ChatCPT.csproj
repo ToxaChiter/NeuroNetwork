@@ -19,4 +19,8 @@
     <PackageReference Include="MNIST.IO" Version="1.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Tests\" />
+  </ItemGroup>
+
 </Project>

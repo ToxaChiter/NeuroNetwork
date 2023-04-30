@@ -15,9 +15,9 @@
 //Вот как может выглядеть код для реализации такой нейросети на C#:
 
 using ChatCPT;
+using Microsoft.VisualBasic.FileIO;
 using MNIST.IO;
 using System.Diagnostics;
-using System.Reflection.Emit;
 
 //public class NeuralNetwork
 //{
@@ -245,6 +245,9 @@ using System.Reflection.Emit;
 
 class Program
 {
+    static List<(double[] Labels, double[] Image)> trainCases = new(60_000);
+    static List<(int Label, double[] Image)> checkCases = new(10_000);
+
     static void Main()
     {
         var data = FileReaderMNIST.LoadImagesAndLables(
@@ -252,13 +255,12 @@ class Program
             "../../../data/train-images-idx3-ubyte.gz");
 
         var checkData = FileReaderMNIST.LoadImagesAndLables(
-            "../../../data/t10k-labels-idx1-ubyte.gz", 
+            "../../../data/t10k-labels-idx1-ubyte.gz",
             "../../../data/t10k-images-idx3-ubyte.gz");
 
         Console.WriteLine("Loaded");
-        
-        List<(double[] Labels, double[] Image)> trainCases = new(60_000);
-        List<(int Label, double[] Image)> checkCases = new(10_000);
+
+
 
 
         foreach (var testCase in data)
@@ -288,6 +290,7 @@ class Program
             checkCases.Add((testCase.Label, temp));
         }
 
+        #region PreviousTrain
         //for (int i = 0; i < 60_000; i++)
         //{
         //    trainCases.Add((new double[10], new double[784]));
@@ -298,100 +301,290 @@ class Program
         //    checkCases.Add((new int(), new double[784]));
         //}
 
+        //Console.WriteLine("Performed");
+
+        //MyNeuroNetwork regularNeuroNetwork = new MyNeuroNetwork(28 * 28, new int[] { 80, 16 }, 10);
+        //MyNeuroNetwork advancedOutputNeuroNetwork = new MyNeuroNetwork(regularNeuroNetwork);
+        //MyNeuroNetwork advancedNeuroNetwork = new MyNeuroNetwork(regularNeuroNetwork);
+
+        //MyNeuroNetwork regularNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+        //MyNeuroNetwork advancedOutputNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+        //MyNeuroNetwork advancedNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+
+        //MyNeuroNetwork combinedAdvancedOutputRegularNetwork = new MyNeuroNetwork(regularNeuroNetwork);
+        //MyNeuroNetwork combinedAdvancedRegularNetwork = new MyNeuroNetwork(regularNeuroNetwork);
+
+        //MyNeuroNetwork combinedAdvancedOutputRegularNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+        //MyNeuroNetwork combinedAdvancedRegularNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+
+
+        //var learningRate = 0.1;
+        //var batch = 10;
+
+        //double error = 0.0;
+        //var eval = regularNeuroNetwork.Evaluate(checkCases);
+        //Console.WriteLine($"Init precision: {eval}%");
+
+        //Stopwatch errorStopwatch = new Stopwatch();
+        //Stopwatch evalStopwatch = new Stopwatch();
+
+        //for (int epoch = 1; epoch < 51; epoch++)
+        //{
+        //    Console.WriteLine($"\n\nAfter epoch #{epoch}:\n");
+
+
+        //    errorStopwatch.Start();
+        //    error = regularNeuroNetwork.Train(trainCases, Mode.Regular, learningRate, batch);
+        //    errorStopwatch.Stop();
+        //    evalStopwatch.Start();
+        //    eval = regularNeuroNetwork.Evaluate(checkCases);
+        //    evalStopwatch.Stop();
+        //    Console.WriteLine($"Regular training:                     error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({regularNeuroNetwork.Evaluate(trainCases):F3}%)");
+        //    errorStopwatch.Reset();
+        //    evalStopwatch.Reset();
+
+
+        //    errorStopwatch.Start();
+        //    error = advancedOutputNeuroNetwork.Train(trainCases, Mode.AdvancedOutput, learningRate, batch);
+        //    errorStopwatch.Stop();
+        //    evalStopwatch.Start();
+        //    eval = advancedOutputNeuroNetwork.Evaluate(checkCases);
+        //    evalStopwatch.Stop();
+        //    Console.WriteLine($"Advanced-regular training:            error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({advancedOutputNeuroNetwork.Evaluate(trainCases):F3}%)");
+        //    errorStopwatch.Reset();
+        //    evalStopwatch.Reset();
+
+
+        //    errorStopwatch.Start();
+        //    error = advancedNeuroNetwork.Train(trainCases, Mode.Advanced, learningRate, batch);
+        //    errorStopwatch.Stop();
+        //    evalStopwatch.Start();
+        //    eval = advancedNeuroNetwork.Evaluate(checkCases);
+        //    evalStopwatch.Stop();
+        //    Console.WriteLine($"Advanced training:                    error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({advancedNeuroNetwork.Evaluate(trainCases):F3}%)");
+        //    errorStopwatch.Reset();
+        //    evalStopwatch.Reset();
+
+        //    Console.WriteLine();
+
+        //    //errorStopwatch.Start();
+        //    //error = regularNeuroNetworkParallel.TrainParallel(trainCases, Mode.Regular, learningRate, batch);
+        //    //errorStopwatch.Stop();
+        //    //evalStopwatch.Start();
+        //    //eval = regularNeuroNetworkParallel.Evaluate(checkCases);
+        //    //evalStopwatch.Stop();
+        //    //Console.WriteLine($"Regular parallel training:            error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
+        //    //errorStopwatch.Reset();
+        //    //evalStopwatch.Reset();
+
+
+        //    //errorStopwatch.Start();
+        //    //error = advancedOutputNeuroNetworkParallel.TrainParallel(trainCases, Mode.AdvancedOutput, learningRate, batch);
+        //    //errorStopwatch.Stop();
+        //    //evalStopwatch.Start();
+        //    //eval = advancedOutputNeuroNetworkParallel.Evaluate(checkCases);
+        //    //errorStopwatch.Stop();
+        //    //Console.WriteLine($"Advanced-regular parallel training:   error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({advancedOutputNeuroNetworkParallel.Evaluate(trainCases):F3}%)");
+        //    //errorStopwatch.Reset();
+        //    //evalStopwatch.Reset();
+
+
+        //    //errorStopwatch.Start();
+        //    //error = advancedNeuroNetworkParallel.TrainParallel(trainCases, Mode.Advanced, learningRate, batch);
+        //    //errorStopwatch.Stop();
+        //    //evalStopwatch.Start();
+        //    //eval = advancedNeuroNetworkParallel.Evaluate(checkCases);
+        //    //errorStopwatch.Stop();
+        //    //Console.WriteLine($"Advanced parallel training:           error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({advancedNeuroNetworkParallel.Evaluate(trainCases):F3}%)");
+        //    //errorStopwatch.Reset();
+        //    //evalStopwatch.Reset();
+
+        //    Console.WriteLine();
+
+        //    errorStopwatch.Start();
+        //    if (epoch < 4) error = combinedAdvancedOutputRegularNetwork.Train(trainCases, Mode.AdvancedOutput, learningRate, batch);
+        //    else error = combinedAdvancedOutputRegularNetwork.Train(trainCases, Mode.Regular, learningRate, batch);
+        //    errorStopwatch.Stop();
+        //    evalStopwatch.Start();
+        //    eval = combinedAdvancedOutputRegularNetwork.Evaluate(checkCases);
+        //    evalStopwatch.Stop();
+        //    Console.WriteLine($"adv-reg + reg training:               error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({combinedAdvancedOutputRegularNetwork.Evaluate(trainCases):F3}%)");
+        //    errorStopwatch.Reset();
+        //    evalStopwatch.Reset();
+
+
+        //    errorStopwatch.Start();
+        //    if (epoch < 4) error = combinedAdvancedRegularNetwork.Train(trainCases, Mode.Advanced, learningRate, batch);
+        //    else error = combinedAdvancedRegularNetwork.Train(trainCases, Mode.Regular, learningRate, batch);
+        //    errorStopwatch.Stop();
+        //    evalStopwatch.Start();
+        //    eval = combinedAdvancedRegularNetwork.Evaluate(checkCases);
+        //    evalStopwatch.Stop();
+        //    Console.WriteLine($"adv + reg training:                   error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({combinedAdvancedRegularNetwork.Evaluate(trainCases):F3}%)");
+        //    errorStopwatch.Reset();
+        //    evalStopwatch.Reset();
+
+        //    //Console.WriteLine();
+
+        //    //errorStopwatch.Start();
+        //    //if (epoch < 4) error = combinedAdvancedOutputRegularNetworkParallel.TrainParallel(trainCases, Mode.AdvancedOutput, learningRate, batch);
+        //    //else error = combinedAdvancedOutputRegularNetworkParallel.Train(trainCases, Mode.Regular, learningRate, batch);
+        //    //errorStopwatch.Stop();
+        //    //evalStopwatch.Start();
+        //    //eval = combinedAdvancedOutputRegularNetworkParallel.Evaluate(checkCases);
+        //    //evalStopwatch.Stop();
+        //    //Console.WriteLine($"adv-reg parallel + reg training:      error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
+        //    //errorStopwatch.Reset();
+        //    //evalStopwatch.Reset();
+
+
+        //    //errorStopwatch.Start();
+        //    //if (epoch < 4) error = combinedAdvancedRegularNetworkParallel.TrainParallel(trainCases, Mode.Advanced, learningRate, batch);
+        //    //else error = combinedAdvancedRegularNetworkParallel.Train(trainCases, Mode.Regular, learningRate, batch);
+        //    //errorStopwatch.Stop();
+        //    //evalStopwatch.Start();
+        //    //eval = combinedAdvancedRegularNetworkParallel.Evaluate(checkCases);
+        //    //evalStopwatch.Stop();
+        //    //Console.WriteLine($"adv parallel + reg training:          error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
+        //    //errorStopwatch.Reset();
+        //    //evalStopwatch.Reset();
+        //}
+        #endregion
+
         Console.WriteLine("Performed");
-        
-        MyNeuroNetwork regularNeuroNetwork = new MyNeuroNetwork(28 * 28, new int[] { 80, 16 }, 10);
-        MyNeuroNetwork advancedOutputNeuroNetwork = new MyNeuroNetwork(regularNeuroNetwork);
-        MyNeuroNetwork advancedNeuroNetwork = new MyNeuroNetwork(regularNeuroNetwork);
 
-        MyNeuroNetwork regularNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
-        MyNeuroNetwork advancedOutputNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
-        MyNeuroNetwork advancedNeuroNetworkParallel = new MyNeuroNetwork(regularNeuroNetwork);
+        MyNeuroNetwork baseNeuroNetwork = new(28 * 28, new int[] { 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 }, 10);
+        Setup baseSetup = new() { IsParallel = false, LearningRate = 0.1, Batch = 20 };
+        baseSetup.Name =
+            $"Setup {baseNeuroNetwork.Inputs} {string.Join(" ", baseNeuroNetwork.Hiddens)} {baseNeuroNetwork.Outputs} " +
+            $"{baseSetup.LearningRate:F2} {baseSetup.Batch} {baseSetup.IsParallel} extra"
+            ;
 
-        var learningRate = 0.1;
-        var batch = 5;
+        var directory = FileSystem.CombinePath("../../../", $"Tests/{baseSetup.Name}");
+        FileSystem.CreateDirectory(directory);
 
-        double error = 0.0;
-        var eval = regularNeuroNetwork.Evaluate(checkCases);
-        Console.WriteLine($"Init precision: {eval}%");
+        baseSetup.Directory = directory;
 
-        Stopwatch errorStopwatch = new Stopwatch();
-        Stopwatch evalStopwatch = new Stopwatch();
-
-        for (int epoch = 1; epoch < 51; epoch++)
+        List<(MyNeuroNetwork neuroNetwork, Setup setup)> cases = new()
         {
-            Console.WriteLine($"\n\nAfter epoch #{epoch}:\n");
+            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            {
+                Name = "regular", Mode = Mode.Regular, EpochMax = 50, ChangeSetupFromEpoch = null
+            }),
+
+            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            {
+                Name = "adv-reg", Mode = Mode.AdvancedOutput, EpochMax = 20, ChangeSetupFromEpoch = null
+            }),
+
+            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            {
+                Name = "advanced", Mode = Mode.Advanced, EpochMax = 20, ChangeSetupFromEpoch = null
+            }),
 
 
-            errorStopwatch.Start();
-            error = regularNeuroNetwork.Train(trainCases, Mode.Regular, learningRate, batch);
-            errorStopwatch.Stop();
-            evalStopwatch.Start();
-            eval = regularNeuroNetwork.Evaluate(checkCases);
-            evalStopwatch.Stop();
-            Console.WriteLine($"Regular training:                     error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({regularNeuroNetwork.Evaluate(trainCases):F3}%)");
-            errorStopwatch.Reset();
-            evalStopwatch.Reset();
+
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "adv-reg reg", Mode = Mode.AdvancedOutput, EpochMax = 50, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch > 5) setup.Mode = Mode.Regular;
+            //    }
+            //}),
+
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "adv reg", Mode = Mode.Advanced, EpochMax = 50, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch > 5) setup.Mode = Mode.Regular;
+            //    }
+            //}),
 
 
-            //errorStopwatch.Start();
-            //error = advancedOutputNeuroNetwork.Train(trainCases, Mode.AdvancedOutput, learningRate, batch);
-            //errorStopwatch.Stop();
-            //evalStopwatch.Start();
-            //eval = advancedOutputNeuroNetwork.Evaluate(checkCases);
-            //evalStopwatch.Stop();
-            //Console.WriteLine($"Advanced-regular training:            error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
-            //errorStopwatch.Reset();
-            //evalStopwatch.Reset();
+
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "reg adv-reg", Mode = Mode.Regular, EpochMax = 20, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch > 5) setup.Mode = Mode.AdvancedOutput;
+            //    }
+            //}),
+
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "reg adv", Mode = Mode.Regular, EpochMax = 20, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch > 5) setup.Mode = Mode.Advanced;
+            //    }
+            //}),
 
 
-            //errorStopwatch.Start();
-            //error = advancedNeuroNetwork.Train(trainCases, Mode.Advanced, learningRate, batch);
-            //errorStopwatch.Stop();
-            //evalStopwatch.Start();
-            //eval = advancedNeuroNetwork.Evaluate(checkCases);
-            //evalStopwatch.Stop();
-            //Console.WriteLine($"Advanced training:                    error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
-            //errorStopwatch.Reset();
-            //evalStopwatch.Reset();
 
-            //Console.WriteLine();
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "adv-reg + reg", Mode = Mode.AdvancedOutput, EpochMax = 25, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch % 2 == 1) setup.Mode = Mode.Regular;
+            //        else setup.Mode = Mode.AdvancedOutput;
+            //    }
+            //}),
 
-            //errorStopwatch.Start();
-            //error = regularNeuroNetworkParallel.TrainParallel(trainCases, Mode.Regular, learningRate, batch);
-            //errorStopwatch.Stop();
-            //evalStopwatch.Start();
-            //eval = regularNeuroNetworkParallel.Evaluate(checkCases);
-            //evalStopwatch.Stop();
-            //Console.WriteLine($"Regular parallel training:            error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}%");
-            //errorStopwatch.Reset();
-            //evalStopwatch.Reset();
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "adv + reg", Mode = Mode.Advanced, EpochMax = 25, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch % 2 == 1) setup.Mode = Mode.Regular;
+            //        else setup.Mode = Mode.Advanced;
+            //    }
+            //}),
+        };
 
-
-            //errorStopwatch.Start();
-            //error = advancedOutputNeuroNetworkParallel.TrainParallel(trainCases, Mode.AdvancedOutput, learningRate, batch);
-            //errorStopwatch.Stop();
-            //evalStopwatch.Start();
-            //eval = advancedOutputNeuroNetworkParallel.Evaluate(checkCases);
-            //errorStopwatch.Stop();
-            //Console.WriteLine($"Advanced-regular parallel training:   error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({advancedOutputNeuroNetworkParallel.Evaluate(trainCases):F3}%)");
-            //errorStopwatch.Reset();
-            //evalStopwatch.Reset();
-
-
-            //errorStopwatch.Start();
-            //error = advancedNeuroNetworkParallel.TrainParallel(trainCases, Mode.Advanced, learningRate, batch);
-            //errorStopwatch.Stop();
-            //evalStopwatch.Start();
-            //eval = advancedNeuroNetworkParallel.Evaluate(checkCases);
-            //errorStopwatch.Stop();
-            //Console.WriteLine($"Advanced parallel training:           error - {error:F3} ({errorStopwatch.Elapsed}),   precision - {eval}% ({advancedNeuroNetworkParallel.Evaluate(trainCases):F3}%)");
-            //errorStopwatch.Reset();
-            //evalStopwatch.Reset();
-        }
-
+        Stopwatch sw = Stopwatch.StartNew();
+        Parallel.ForEach(cases, TrainWithSetup);
+        sw.Stop();
+        Console.WriteLine($"Time spent: {sw.Elapsed}");
     }
 
+    static void TrainWithSetup((MyNeuroNetwork neuroNetwork, Setup setup) @case)
+    {
+        var neuroNetwork = @case.neuroNetwork;
+        var setup = @case.setup;
+
+        var stream = File.OpenWrite($"{setup.Directory}/{setup.Name}.txt");
+        StreamWriter writer = new(stream);
+
+        Stopwatch stopwatch = new();
+
+        try
+        {
+            for (int epoch = 1; epoch < setup.EpochMax + 1; epoch++)
+            {
+                stopwatch.Reset();
+                stopwatch.Start();
+                var error = neuroNetwork.Train(trainCases, setup.Mode, setup.LearningRate, setup.Batch);
+                stopwatch.Stop();
+
+                var evalTest = neuroNetwork.Evaluate(checkCases);
+                var evalTrain = neuroNetwork.Evaluate(trainCases);
+
+                var str =
+                    $"Epoch #{epoch}\n" +
+                    $"Error - {error:F3} ({stopwatch.Elapsed})\n" +
+                    $"Precision - {evalTest}% ({evalTrain:F3}%)\n\n";
+
+                Console.WriteLine($"#{epoch} - {stopwatch.Elapsed}");
+                writer.WriteLine(str);
+
+                setup.ChangeSetup(epoch);
+            }
+
+            writer.Close();
+        }
+        finally
+        {
+            writer.Close();
+        }
+    }
 }
 
 

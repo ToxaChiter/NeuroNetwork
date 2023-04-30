@@ -129,6 +129,38 @@ public enum Mode
 //}
 
 
+public class Setup
+{
+    public string Name { get; set; }
+    public double LearningRate { get; set; }
+    public int Batch { get; set; }
+    public bool IsParallel { get; set; }
+    public Mode Mode { get; set; }
+    public int EpochMax { get; set; }
+    public string Directory { get; set; }
+
+    public Action<Setup, int> ChangeSetupFromEpoch { get; set; }
+
+    public Setup()
+    {
+
+    }
+    public Setup(Setup setup)
+    {
+        LearningRate = setup.LearningRate;
+        Batch = setup.Batch;
+        IsParallel = setup.IsParallel;
+        Directory = setup.Directory;
+    }
+
+    public void ChangeSetup(int epoch)
+    {
+        ChangeSetupFromEpoch?.Invoke(this, epoch);
+    }
+
+    //public delegate Mode ChangeModeFromErrorDelegate(double error);
+}
+
 
 internal class MyNeuroNetwork
 {
