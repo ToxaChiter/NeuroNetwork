@@ -7,127 +7,6 @@ public enum Mode
     Advanced,
 }
 
-//public class NeuralNetwork
-//{
-//    private int[] layerSizes;
-//    private double[,] weights;
-//    private double[] biases;
-//    private double[] activations;
-//    private double[] deltas;
-
-//    public NeuralNetwork(int[] layerSizes)
-//    {
-//        this.layerSizes = layerSizes;
-//        int numWeights = 0;
-//        for (int i = 0; i < layerSizes.Length - 1; i++)
-//        {
-//            numWeights += layerSizes[i] * layerSizes[i + 1];
-//        }
-//        weights = new double[layerSizes.Length - 1, numWeights / (layerSizes.Length - 1)];
-//        biases = new double[layerSizes.Length - 1];
-//        activations = new double[layerSizes.Length];
-//        deltas = new double[numWeights / (layerSizes.Length - 1)];
-//        Random random = new Random();
-//        for (int i = 0; i < weights.GetLength(0); i++)
-//        {
-//            for (int j = 0; j < weights.GetLength(1); j++)
-//            {
-//                weights[i, j] = random.NextDouble() * 2 - 1;
-//            }
-//            biases[i] = random.NextDouble() * 2 - 1;
-//        }
-//    }
-
-//    public void Train(double[][] inputs, double[][] outputs, int epochs, double learningRate)
-//    {
-//        for (int i = 0; i < epochs; i++)
-//        {
-//            for (int j = 0; j < inputs.Length; j++)
-//            {
-//                // Feed the inputs forward through the network
-//                FeedForward(inputs[j]);
-
-//                // Backpropagate the error through the network
-//                Backpropagate(outputs[j]);
-
-//                // Update the weights and biases using the calculated deltas
-//                UpdateWeightsAndBiases(learningRate);
-//            }
-//        }
-//    }
-
-//    private void FeedForward(double[] input)
-//    {
-//        // Copy the inputs into the first layer's activation values
-//        Array.Copy(input, activations, input.Length);
-//        int weightIndex = 0;
-//        for (int i = 0; i < layerSizes.Length - 1; i++)
-//        {
-//            // Compute the newActivations for the next layer
-//            double[] newActivations = new double[layerSizes[i + 1]];
-//            for (int j = 0; j < layerSizes[i + 1]; j++)
-//            {
-//                double sum = 0.0;
-//                for (int k = 0; k < layerSizes[i]; k++)
-//                {
-//                    // Compute the weighted sum of the previous layer's newActivations
-//                    // to get the inputs to the current neuron
-//                    sum += weights[i, j * layerSizes[i] + k] * activations[k];
-//                }
-//                // Apply the activation function (tanh) to the neuron's inputs
-//                newActivations[j] = Math.Tanh(sum + biases[i]);
-//            }
-//            // Copy the newActivations into the current layer's activation values
-//            Array.Copy(newActivations, activations, newActivations.Length);
-//        }
-//    }
-
-//    private void Backpropagate(double[] output)
-//    {
-//        for (int i = 0; i < layerSizes[layerSizes.Length - 1]; i++)
-//        {
-//            double activation = activations[layerSizes[layerSizes.Length - 1 - 1] + i];
-//            // Compute the error for the output layer neurons using the derivative of the activation function (tanh)
-//            deltas[layerSizes[^1] + i] = activation * (1 - activation) * (output[i] - activations[layerSizes[^1] + i]);
-//        }
-//        int weightIndex = deltas.Length - layerSizes[^1];
-//        for (int i = layerSizes.Length - 2; i >= 0; i--)
-//        {
-//            for (int j = 0; j < layerSizes[i]; j++)
-//            {
-//                double activation = activations[i * layerSizes[i + 1] + j];
-//                double sum = 0.0;
-//                for (int k = 0; k < layerSizes[i + 1]; k++)
-//                {
-//                    // Compute the weighted sum of the next layer's deltas
-//                    // to get the contribution of each neuron to the current neuron's delta
-//                    sum += deltas[(i + 1) * layerSizes[i + 1] + k] * weights[i, k * layerSizes[i] + j];
-//                }
-//                // Compute the error for the current layer neurons using the derivative of the activation function (tanh)
-//                deltas[weightIndex--] = activation * (1 - activation) * sum;
-//            }
-//        }
-//    }
-
-//    private void UpdateWeightsAndBiases(double learningRate)
-//    {
-//        int weightIndex = 0;
-//        for (int i = 0; i < layerSizes.Length - 1; i++)
-//        {
-//            for (int j = 0; j < layerSizes[i + 1]; j++)
-//            {
-//                // Update the biases using the calculated deltas
-//                biases[i] += learningRate * deltas[layerSizes[i + 1] + j];
-//                for (int k = 0; k < layerSizes[i]; k++)
-//                {
-//                    // Update the weights using the calculated deltas
-//                    weights[i, j * layerSizes[i] + k] += learningRate * activations[k] * deltas[weightIndex++];
-//                }
-//            }
-//        }
-//    }
-//}
-
 
 public class Setup
 {
@@ -157,8 +36,6 @@ public class Setup
     {
         ChangeSetupFromEpoch?.Invoke(this, epoch);
     }
-
-    //public delegate Mode ChangeModeFromErrorDelegate(double error);
 }
 
 
@@ -255,13 +132,6 @@ internal class MyNeuroNetwork
         for (int i = 0; i < neuroNetwork.weights.Count; i++)
         {
             weights.Add(neuroNetwork.weights[i].Clone() as double[,]);
-            foreach (var item in weights[i])
-            {
-                if (item is double.NaN or double.NegativeInfinity or double.PositiveInfinity or > 100.0 or < -100.0)
-                {
-                    int ex = 0;
-                }
-            }
         }
 
         biases = new List<double[]>(neuroNetwork.biases.Count);
@@ -318,26 +188,6 @@ internal class MyNeuroNetwork
                 for (int i = 0; i < randTrainCases.Count; i += batch)
                 {
                     ResetDeltas();
-
-                    //if (i + batch >= randTrainCases.Count)
-                    //{
-                    //    while (i < randTrainCases.Count)
-                    //    {
-                    //        RegularTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
-                    //        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
-                    //        i++;
-                    //    }
-                    //    UpdateWeightsBiases(batch);
-                    //    break;
-                    //}
-
-                    //Parallel.For(0, batch, j =>
-                    //{
-                    //    RegularTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
-                    //    totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
-                    //});
-
-
                     for (int j = 0; j < batch && i < randTrainCases.Count; j++, i++)
                     {
                         RegularTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
@@ -346,37 +196,9 @@ internal class MyNeuroNetwork
                     UpdateWeightsBiases(batch);
                 }
 
-
                 return totalError;
 
             case Mode.AdvancedOutput:
-                //for (int i = 0; i < randTrainCases.Count; i += batch)
-                //{
-                //    ResetDeltas();
-
-                //    if (i + batch >= randTrainCases.Count)
-                //    {
-                //        while (i < randTrainCases.Count)
-                //        {
-                //            AdvancedOutputTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
-                //            totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
-                //            i++;
-                //        }
-                //        UpdateWeightsBiases(batch);
-                //        break;
-                //    }
-
-                //    Parallel.For(0, batch, j =>
-                //    {
-                //        AdvancedOutputTrain(randTrainCases[i].Image, randTrainCases[i].Labels, learningRate);
-                //        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
-                //    });
-
-                //    UpdateWeightsBiases(batch);
-                //}
-
-
-
                 for (int i = 0; i < randTrainCases.Count;)
                 {
                     ResetDeltas();
@@ -388,38 +210,9 @@ internal class MyNeuroNetwork
                     UpdateWeightsBiases(batch);
                 }
 
-
                 return totalError;
 
             case Mode.Advanced:
-
-
-                //for (int i = 0; i < randTrainCases.Count; i += batch)
-                //{
-                //    ResetDeltas();
-
-                //    if (i + batch >= randTrainCases.Count)
-                //    {
-                //        while (i < randTrainCases.Count)
-                //        {
-                //            AdvancedTrain(randTrainCases[i].Image, randTrainCases[i].Labels);
-                //            totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
-                //            i++;
-                //        }
-                //        UpdateWeightsBiases(batch);
-                //        break;
-                //    }
-
-                //    Parallel.For(0, batch, j =>
-                //    {
-                //        AdvancedTrain(randTrainCases[i].Image, randTrainCases[i].Labels);
-                //        totalError += randTrainCases[i].Labels.Zip(outputs[^1], (t, o) => 0.5 * Math.Pow(t - o, 2)).Sum();
-                //    });
-
-                //    UpdateWeightsBiases(batch);
-                //}
-
-
                 for (int i = 0; i < randTrainCases.Count;)
                 {
                     ResetDeltas();
@@ -430,7 +223,6 @@ internal class MyNeuroNetwork
                     }
                     UpdateWeightsBiases(batch);
                 }
-
 
                 return totalError;
 
@@ -578,16 +370,8 @@ internal class MyNeuroNetwork
                     // Compute the weighted sum of the previous layer's outputs
                     // to get the inputs to the current neuron
                     sum += weights[i, j] * prevActivations[i];
-                    //if (double.IsNaN(sum) || double.IsInfinity(sum))
-                    //{
-                    //    int ex = 0;
-                    //}
                 }
                 weightedSums[j] = sum - biases[j];
-                //if (double.IsNaN(weightedSums[j]) || double.IsInfinity(weightedSums[j]))
-                //{
-                //    int ex = 0;
-                //}
                 // Apply the activation function (sigmoid) to the neuron's inputs
                 newActivations[j] = Sigmoid(weightedSums[j]);
             }
@@ -628,7 +412,6 @@ internal class MyNeuroNetwork
     }
 
 
-    // Maybe mistakes
     private void BackpropagateAdvanced(double[] output)
     {
         // Compute the error for the output layer neurons
@@ -650,12 +433,10 @@ internal class MyNeuroNetwork
 
             if (D <= 0.0) D = 0.001;
             if (D >= 1.0) D = 0.999;
+
             double ln = Math.Log(D / (1 - D));
-            //if (double.IsNaN(ln) || double.IsInfinity(ln))
-            //{
-            //    int ex = 0;
-            //}
             var delta = (weightedSums[^1][j] - ln) / bottomLast;
+
             biaseDeltas[^1][j] += delta;
             for (int i = 0; i < layerSizes[^2]; i++)
             {
@@ -816,18 +597,8 @@ internal class MyNeuroNetwork
             if (D <= 0.0) D = 0.001;
             if (D >= 1.0) D = 0.999;
             double ln = Math.Log(D / (1 - D));
-            //if (double.IsNaN(ln) || double.IsInfinity(ln))
-            //{
-            //    int ex = 0;
-            //}
 
             var delta = (weightedSums[^1][j] - ln) / bottomLast;
-
-            //if (delta is >1.0E+20 or <-1.0E+20)
-            //{
-            //    int ex = 0;
-            //}
-
 
             biaseDeltas[^1][j] += delta;
             for (int i = 0; i < layerSizes[^2]; i++)
@@ -863,17 +634,7 @@ internal class MyNeuroNetwork
                 for (int k = 0; k < layerSizes[L - 1]; k++)
                 {
                     weightDeltas[k, j] += learningRate * errors[j] * prevOutputs[k];
-                    //if (double.IsNaN(weightDeltas[k, j]) || double.IsInfinity(weightDeltas[k, j]))
-                    //{
-                    //    int ex = 0;
-                    //}
                 }
-
-                //biases[j] += learningRate * errors[j];
-                //for (int k = 0; k < layerSizes[L - 1]; k++)
-                //{
-                //    weights[k, j] -= learningRate * errors[j] * prevOutputs[k];
-                //}
             }
         }
     }
@@ -956,17 +717,9 @@ internal class MyNeuroNetwork
                 for (int i = 0; i < weights.GetLength(0); i++)
                 {
                     weights[i, j] -= weightDeltas[i, j] / batch;
-                    //if (double.IsNaN(weightDeltas[i, j]) || double.IsInfinity(weightDeltas[i, j]))
-                    //{
-                    //    int ex = 0;
-                    //}
                 }
 
                 biases[j] += biaseDeltas[j] / batch;
-                //if (double.IsNaN(biaseDeltas[j]) || double.IsInfinity(biaseDeltas[j]))
-                //{
-                //    int ex = 0;
-                //}
             }
         }
     }
@@ -1176,17 +929,4 @@ internal class MyNeuroNetwork
         }
         return new List<T>(data);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
