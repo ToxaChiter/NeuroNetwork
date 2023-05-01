@@ -54,6 +54,7 @@ class Program
 
 
         var directory = FileSystem.CombinePath("../../../", $"Tests/{baseSetup.Name}");
+        if (Directory.Exists(directory)) throw new ArgumentException($"The {directory} directory already exists");
         FileSystem.CreateDirectory(directory);
 
         baseSetup.Directory = directory;
