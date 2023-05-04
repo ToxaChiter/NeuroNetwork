@@ -45,7 +45,7 @@ class Program
         MyNeuroNetwork baseNeuroNetwork = new(28 * 28, new int[] { 80, 16 }, 10);
 
         // baseSetup configurates basic parameters for all trainings (can be changed manually)
-        Setup baseSetup = new() { IsParallel = false, LearningRate = 0.1, Batch = 20 };
+        Setup baseSetup = new() { IsParallel = false, LearningRate = 0.1, Batch = 5 };
         baseSetup.Name =
             $"Setup {baseNeuroNetwork.Inputs} {string.Join(" ", baseNeuroNetwork.Hiddens)} {baseNeuroNetwork.Outputs} " +
             $"{baseSetup.LearningRate:F2} {baseSetup.Batch} {baseSetup.IsParallel} extra"
@@ -73,7 +73,7 @@ class Program
             // more advanced simple network
             (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
             {
-                Name = "adv-reg", Mode = Mode.AdvancedOutput, EpochMax = 20, ChangeSetupFromEpoch = null
+                Name = "adv-reg", Mode = Mode.AdvancedOutput, EpochMax = 20, ChangeSetupFromEpoch = null, LearningRate = 0.9
             }),
 
             // the most advanced simple network
