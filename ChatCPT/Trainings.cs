@@ -32,6 +32,17 @@ public class Setup
         Directory = setup.Directory;
     }
 
+    public Setup Copy()
+    {
+        return new Setup(this)
+        {
+            Name = this.Name,
+            Mode = this.Mode,
+            EpochMax = this.EpochMax,
+            ChangeSetupFromEpoch = this.ChangeSetupFromEpoch
+        };
+    }
+
     public void ChangeSetup(int epoch)
     {
         ChangeSetupFromEpoch?.Invoke(this, epoch);

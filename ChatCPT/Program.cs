@@ -8,6 +8,8 @@ class Program
     static List<(double[] Labels, double[] Image)> trainCases = new(60_000);
     static List<(int Label, double[] Image)> checkCases = new(10_000);
 
+    static int Repeats;
+
     static void Main()
     {
         var data = FileReaderMNIST.LoadImagesAndLables(
@@ -42,15 +44,17 @@ class Program
 
 
         // baseNeuroNetwork configurates the basic architecture for other networks (can be changed manually)
-        MyNeuroNetwork baseNeuroNetwork = new(28 * 28, new int[] { 80, 16 }, 10);
+        MyNeuroNetwork baseNeuroNetwork = new(28 * 28, new int[] { 16 }, 10);
 
         // baseSetup configurates basic parameters for all trainings (can be changed manually)
-        Setup baseSetup = new() { IsParallel = false, LearningRate = 0.1, Batch = 5 };
+        Setup baseSetup = new() { IsParallel = false, LearningRate = 0.1, Batch = 10 };
         baseSetup.Name =
             $"Setup {baseNeuroNetwork.Inputs} {string.Join(" ", baseNeuroNetwork.Hiddens)} {baseNeuroNetwork.Outputs} " +
-            $"{baseSetup.LearningRate:F2} {baseSetup.Batch} {baseSetup.IsParallel} extra"
+            $"{baseSetup.LearningRate:F2} {baseSetup.Batch} {baseSetup.IsParallel} avg"
             ;
 
+
+        Repeats = 3;
 
 
         var directory = FileSystem.CombinePath("../../../", $"Tests/{baseSetup.Name}");
@@ -141,10 +145,33 @@ class Program
             }),
         };
 
+        var avgCases = new List<List<(MyNeuroNetwork neuroNetwork, Setup setup)>>();
+        foreach (var (neuroNetwork, setup) in cases)
+        {
+            var list = new List<(MyNeuroNetwork neuroNetwork, Setup setup)>(Repeats);
+            for (int i = 0; i < Repeats; i++)
+            {
+                list.Add((new MyNeuroNetwork(neuroNetwork), setup.Copy()));
+            }
+            avgCases.Add(list);
+        }
+
         Stopwatch sw = Stopwatch.StartNew();
-        Parallel.ForEach(cases, TrainWithSetup);
+        foreach (var item in avgCases)
+        {
+            var list = new List<List<(MyNeuroNetwork neuroNetwork, Setup setup)>>() { item };
+            var result = Parallel.ForEach(list, TrainWithSetupAvg);
+            Console.WriteLine("Next");
+        }
+
         sw.Stop();
-        Console.WriteLine($"Time spent: {sw.Elapsed}");
+        Console.WriteLine($"Time spent: {sw.Elapsed} (x{Repeats})");
+
+        //foreach (var item in cases)
+        //{
+        //    Thread thread = new Thread(() => TrainWithSetup(item));
+        //    thread.Start();
+        //}
     }
 
     static void TrainWithSetup((MyNeuroNetwork neuroNetwork, Setup setup) @case)
@@ -180,6 +207,60 @@ class Program
                 setup.ChangeSetup(epoch);
             }
 
+            writer.Close();
+        }
+        finally
+        {
+            writer.Close();
+        }
+    }
+
+
+    static void TrainWithSetupAvg(List<(MyNeuroNetwork neuroNetwork, Setup setup)> @case)
+    {
+        var stream = File.OpenWrite($"{@case[0].setup.Directory}/{@case[0].setup.Name}.txt");
+        StreamWriter writer = new(stream);
+
+        Stopwatch stopwatch = new();
+
+        try
+        {
+            for (int epoch = 1; epoch < @case[0].setup.EpochMax + 1; epoch++)
+            {
+                var error = 0.0;
+                stopwatch.Reset();
+                stopwatch.Start();
+                for (int i = 0; i < Repeats; i++)
+                {
+                    var neuroNetwork = @case[i].neuroNetwork;
+                    var setup = @case[i].setup;
+
+                    error += neuroNetwork.Train(trainCases, setup.Mode, setup.LearningRate, setup.Batch);
+
+                    setup.ChangeSetup(epoch);
+                }
+                stopwatch.Stop();
+
+                var evalTest = 0.0;
+                var evalTrain = 0.0;
+                for (int i = 0; i < Repeats; i++)
+                {
+                    var neuroNetwork = @case[i].neuroNetwork;
+                    var setup = @case[i].setup;
+
+                    evalTest += neuroNetwork.Evaluate(checkCases);
+                    evalTrain += neuroNetwork.Evaluate(trainCases);
+                }
+
+                var str =
+                    $"Epoch #{epoch}\n" +
+                    $"Error - {error / Repeats:F3} ({stopwatch.Elapsed / Repeats})\n" +
+                    $"Precision - {evalTest / Repeats}% ({evalTrain / Repeats:F3}%)\n\n";
+
+                Console.WriteLine($"#{epoch} - {stopwatch.Elapsed / Repeats}");
+                writer.WriteLine(str);
+            }
+            Console.WriteLine("End");
             writer.Close();
         }
         finally
