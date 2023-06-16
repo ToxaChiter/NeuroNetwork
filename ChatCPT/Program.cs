@@ -44,17 +44,17 @@ class Program
 
 
         // baseNeuroNetwork configurates the basic architecture for other networks (can be changed manually)
-        MyNeuroNetwork baseNeuroNetwork = new(28 * 28, new int[] { 16 }, 10);
+        MyNeuroNetwork baseNeuroNetwork = new(28 * 28, new int[] { 200, 80, 16 }, 10);
 
         // baseSetup configurates basic parameters for all trainings (can be changed manually)
-        Setup baseSetup = new() { IsParallel = false, LearningRate = 0.1, Batch = 10 };
+        Setup baseSetup = new() { IsParallel = false, LearningRate = 0.1, Batch = 100 };
         baseSetup.Name =
             $"Setup {baseNeuroNetwork.Inputs} {string.Join(" ", baseNeuroNetwork.Hiddens)} {baseNeuroNetwork.Outputs} " +
-            $"{baseSetup.LearningRate:F2} {baseSetup.Batch} {baseSetup.IsParallel} avg"
+            $"{baseSetup.LearningRate:F2} {baseSetup.Batch} {baseSetup.IsParallel} avg parallel"
             ;
 
 
-        Repeats = 3;
+        Repeats = 1;
 
 
         var directory = FileSystem.CombinePath("../../../", $"Tests/{baseSetup.Name}");
@@ -68,81 +68,81 @@ class Program
         // the most important setings for each network
         List<(MyNeuroNetwork neuroNetwork, Setup setup)> cases = new()
         {
-            // the very regular simple network, nothing special
+            //// the very regular simple network, nothing special
             (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
             {
-                Name = "regular", Mode = Mode.Regular, EpochMax = 50, ChangeSetupFromEpoch = null
+                Name = "regular", Mode = Mode.Regular, EpochMax = 25, ChangeSetupFromEpoch = null
             }),
 
             // more advanced simple network
             (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
             {
-                Name = "adv-reg", Mode = Mode.AdvancedOutput, EpochMax = 20, ChangeSetupFromEpoch = null, LearningRate = 0.9
+                Name = "adv-reg", Mode = Mode.AdvancedOutput, EpochMax = 25, ChangeSetupFromEpoch = null
             }),
 
-            // the most advanced simple network
+            //// the most advanced simple network
             (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
             {
-                Name = "advanced", Mode = Mode.Advanced, EpochMax = 20, ChangeSetupFromEpoch = null
+                Name = "advanced", Mode = Mode.Advanced, EpochMax = 25, ChangeSetupFromEpoch = null
             }),
 
 
 
-            // not so simple network, it changes its Mode because of current epoch 
-            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
-            {
-                Name = "adv-reg reg", Mode = Mode.AdvancedOutput, EpochMax = 50, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
-                {
-                    // the logic of changing Setup (you can change the whole Setup instanse in the way you want to)
-                    if (epoch > 5) setup.Mode = Mode.Regular;
-                }
-            }),
+            //// not so simple network, it changes its Mode because of current epoch 
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "adv-reg reg", Mode = Mode.AdvancedOutput, EpochMax = 50, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        // the logic of changing Setup (you can change the whole Setup instanse in the way you want to)
+            //        if (epoch > 5) setup.Mode = Mode.Regular;
+            //    }
+            //}),
 
-            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
-            {
-                Name = "adv reg", Mode = Mode.Advanced, EpochMax = 50, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
-                {
-                    if (epoch > 5) setup.Mode = Mode.Regular;
-                }
-            }),
-
-
-
-            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
-            {
-                Name = "reg adv-reg", Mode = Mode.Regular, EpochMax = 20, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
-                {
-                    if (epoch > 5) setup.Mode = Mode.AdvancedOutput;
-                }
-            }),
-
-            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
-            {
-                Name = "reg adv", Mode = Mode.Regular, EpochMax = 20, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
-                {
-                    if (epoch > 5) setup.Mode = Mode.Advanced;
-                }
-            }),
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "adv reg", Mode = Mode.Advanced, EpochMax = 50, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch > 5) setup.Mode = Mode.Regular;
+            //    }
+            //}),
 
 
 
-            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
-            {
-                Name = "adv-reg + reg", Mode = Mode.AdvancedOutput, EpochMax = 25, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
-                {
-                    if (epoch % 2 == 1) setup.Mode = Mode.Regular;
-                    else setup.Mode = Mode.AdvancedOutput;
-                }
-            }),
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "reg adv-reg", Mode = Mode.Regular, EpochMax = 20, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch > 5) setup.Mode = Mode.AdvancedOutput;
+            //    }
+            //}),
 
-            (new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
-            {
-                Name = "adv + reg", Mode = Mode.Advanced, EpochMax = 25, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
-                {
-                    if (epoch % 2 == 1) setup.Mode = Mode.Regular;
-                    else setup.Mode = Mode.Advanced;
-                }
-            }),
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "reg adv", Mode = Mode.Regular, EpochMax = 20, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch > 5) setup.Mode = Mode.Advanced;
+            //    }
+            //}),
+
+
+
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "adv-reg + reg", Mode = Mode.AdvancedOutput, EpochMax = 25, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch % 2 == 1) setup.Mode = Mode.Regular;
+            //        else setup.Mode = Mode.AdvancedOutput;
+            //    }
+            //}),
+
+            //(new MyNeuroNetwork(baseNeuroNetwork), new Setup(baseSetup)
+            //{
+            //    Name = "adv + reg", Mode = Mode.Advanced, EpochMax = 25, ChangeSetupFromEpoch = (Setup setup, int epoch) =>
+            //    {
+            //        if (epoch % 2 == 1) setup.Mode = Mode.Regular;
+            //        else setup.Mode = Mode.Advanced;
+            //    }
+            //}),
         };
 
         var avgCases = new List<List<(MyNeuroNetwork neuroNetwork, Setup setup)>>();

@@ -338,7 +338,7 @@ internal class MyNeuroNetwork
         }
         else
         {
-            FeedForward(input);
+            FeedForwardParallel(input);
             BackpropagateAdvanced(output);
         }
     }
@@ -352,7 +352,7 @@ internal class MyNeuroNetwork
         }
         else
         {
-            FeedForward(input);
+            FeedForwardParallel(input);
             BackpropagateAdvancedOutput(output, learningRate);
         }
     }
